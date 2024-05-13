@@ -4,7 +4,7 @@ import '../../domain/entities/contact.dart';
 
 class ItemContact extends StatelessWidget {
   final VoidCallback onEnter;
-  final VoidCallback onDelete;
+  final Function(int) onDelete;
   final Contact contact;
 
 
@@ -49,7 +49,9 @@ class ItemContact extends StatelessWidget {
               Icons.delete,
               color: Colors.red,
             ),
-            onPressed: onDelete,
+            onPressed: (){
+              onDelete(contact.id);
+            },
           ),
         ),
       ),

@@ -1,58 +1,47 @@
+import 'package:contacts_flutter/core/routes/routes.dart';
+import 'package:contacts_flutter/data/contact_controller.dart';
 import 'package:contacts_flutter/presentation/widgets/item_contact.dart';
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-import '../../domain/entities/contact.dart';
+import 'package:get/get.dart';
 
 class ListContact extends StatelessWidget {
   const ListContact({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: fetchContacts(),
-      builder: (BuildContext context, AsyncSnapshot<List<Contact>> snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasError) {
-          return Center(child: Text('Error: ${snapshot.error}'));
+    final controller = Get.put<ContactController>(ContactController());
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text('Contacts'),
+      ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Get.toNamed(AppRoutes.newContact);
+        },
+        child: const Icon(Icons.add),
+      ),
+      body: Obx(() {
+        if (controller.isLoading.value) {
+          return const Center(
+            child: CircularProgressIndicator(),
+          );
         } else {
-          List<Contact> contacts = snapshot.data ?? [];
-          return Scaffold(
-            appBar: AppBar(
-              title: const Text('Contacts'),
-            ),
-            body: ListView.builder(
-              itemCount: contacts.length,
-              itemBuilder: (context, index) {
-                final contact = contacts[index];
-                return ItemContact(
-                  contact: contact,
-                  onEnter: () {
-                  },
-                  onDelete: () {
-                  },
-                );
-              },
-            ),
+          return ListView.builder(
+            itemCount: controller.contacts.length,
+            itemBuilder: (context, index) {
+              final contact = controller.contacts[index];
+              return ItemContact(
+                contact: contact,
+                onEnter: () {
+                  controller.setData(contact);
+                  Get.toNamed(AppRoutes.editContact);
+                },
+                onDelete: controller.deleteContact,
+              );
+            },
           );
         }
-      },
+      }),
     );
-  }
-
-  Future<List<Contact>> fetchContacts() async {
-    final response = await http.get(Uri.parse('https://71bf-186-155-16-253.ngrok-free.app/api/contacts/'));
-
-    if (response.statusCode == 200) {
-      final jsonData = json.decode(response.body);
-      final List<dynamic> contactData = jsonData['data']['records'];
-
-      List<Contact> contacts = contactData.map((data) => Contact.fromJson(data)).toList();
-      return contacts;
-    } else {
-      throw Exception('Failed to load contacts');
-    }
   }
 }
